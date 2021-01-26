@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -57,10 +58,10 @@ func (s *StructReader) Read(v interface{}) error {
 		}
 
 		field := elem.Field(i)
-		switch field.Kind() {
-		case reflect.String:
+		switch field.Type().Name() {
+		case "string":
 			field.SetString(val)
-		case reflect.Bool:
+		case "bool":
 			switch strings.ToLower(val) {
 			case "true":
 				field.SetBool(true)
@@ -69,20 +70,26 @@ func (s *StructReader) Read(v interface{}) error {
 			default:
 				return fmt.Errorf("invalid value for bool: %s", val)
 			}
-		case reflect.Int:
+		case "int":
 			iv, err := strconv.ParseInt(val, 10, 64)
 			if err != nil {
 				return err
 			}
 			field.SetInt(iv)
-		case reflect.Float64:
+		case "float64":
 			fv, err := strconv.ParseFloat(val, 64)
 			if err != nil {
 				return err
 			}
 			field.SetFloat(fv)
+		case "Time":
+			fv, err := time.Parse("2006-01-02 15:04:05 -0700 MST", val)
+			if err != nil {
+				return err
+			}
+			field.Set(reflect.ValueOf(fv))
 		default:
-			return fmt.Errorf("unknown field type: %v", elem.Field(i).Kind())
+			return fmt.Errorf("unknown field type: %v", field.Type().Name())
 		}
 	}
 
